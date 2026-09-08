@@ -380,7 +380,7 @@ function update(){
 
 document.querySelectorAll('input').forEach(el=>el.addEventListener('input',update));
 document.querySelectorAll('.support').forEach(el=>el.addEventListener('change',update));
-document.getElementById('printBtn').addEventListener('click',()=>{const name=document.getElementById('participantName').value.trim(),income=val(document.getElementById('monthlyIncome')),hasExpense=[...document.querySelectorAll('.expense')].some(x=>val(x)>0);if(!name||income<=0||!hasExpense){alert('Complete your name, monthly income, and at least one expense before finishing your snapshot.');return}boostOfferCompletion('financial',document.getElementById('snapshotSection'));window.print()});
+document.getElementById('printBtn').addEventListener('click',()=>{const name=document.getElementById('participantName').value.trim(),income=val(document.getElementById('jobIncome'))+val(document.getElementById('otherIncome')),hasExpense=[...document.querySelectorAll('.expense')].some(x=>val(x)>0);if(!name||income<=0||!hasExpense){alert('Complete your name, monthly income, and at least one expense before finishing your snapshot.');return}boostOfferCompletion('financial',document.getElementById('snapshotSection'));window.print()});
 document.getElementById('resetBtn').addEventListener('click',()=>{
   if(confirm('Clear this financial snapshot and start over?')){
     document.querySelectorAll('input').forEach(el=>{
