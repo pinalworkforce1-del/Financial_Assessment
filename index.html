@@ -335,8 +335,25 @@
 </div>
 
 <script>
+const JOURNEY_KEY='pinal_boost_journey_v1';
+const FINANCIAL_KEY='pinal_boost_financial_v1';
 const money = n => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(Number(n)||0);
 const val = el => Number(el.value)||0;
+function readJourney(){try{return JSON.parse(localStorage.getItem(JOURNEY_KEY)||'{}')||{}}catch{return{}}}
+function buildFinancialEvidence(){
+  const expenses=[...document.querySelectorAll('.expense')].map(x=>({label:x.dataset.label||'',amount:val(x)}));
+  const income={job:val(document.getElementById('jobIncome')),other:val(document.getElementById('otherIncome'))};
+  const incomeTotal=income.job+income.other,expenseTotal=expenses.reduce((s,x)=>s+x.amount,0);
+  return {participantName:document.getElementById('participantName').value.trim(),income,expenses,incomeTotal,expenseTotal,estimatedLeft:incomeTotal-expenseTotal,supports:[...document.querySelectorAll('.support:checked')].map(x=>x.value)}
+}
+function saveFinancialJourneyEvidence(){
+  const evidence=buildFinancialEvidence(),completedAt=new Date().toISOString(),j=readJourney();
+  const record={module:'financial',source:'pinal_financial_assessment',version:2,completedAt,...evidence};
+  j.schema_version=Math.max(Number(j.schema_version)||0,2);j.region='Pinal County';j.modules=j.modules||{};j.progress=j.progress||{};
+  j.modules.financial=record;j.progress.financial='complete';j.updated_at=completedAt;localStorage.setItem(JOURNEY_KEY,JSON.stringify(j));
+  localStorage.setItem(FINANCIAL_KEY,JSON.stringify({completedAt,evidence}));
+  return record
+}
 
 function update(){
   const income = val(document.getElementById('jobIncome')) + val(document.getElementById('otherIncome'));
@@ -380,7 +397,7 @@ function update(){
 
 document.querySelectorAll('input').forEach(el=>el.addEventListener('input',update));
 document.querySelectorAll('.support').forEach(el=>el.addEventListener('change',update));
-document.getElementById('printBtn').addEventListener('click',()=>{const name=document.getElementById('participantName').value.trim(),income=val(document.getElementById('jobIncome'))+val(document.getElementById('otherIncome')),hasExpense=[...document.querySelectorAll('.expense')].some(x=>val(x)>0);if(!name||income<=0||!hasExpense){alert('Complete your name, monthly income, and at least one expense before finishing your snapshot.');return}boostOfferCompletion('financial',document.getElementById('snapshotSection'));window.print()});
+document.getElementById('printBtn').addEventListener('click',()=>{const name=document.getElementById('participantName').value.trim(),income=val(document.getElementById('jobIncome'))+val(document.getElementById('otherIncome')),hasExpense=[...document.querySelectorAll('.expense')].some(x=>val(x)>0);if(!name||income<=0||!hasExpense){alert('Complete your name, monthly income, and at least one expense before finishing your snapshot.');return}saveFinancialJourneyEvidence();boostOfferCompletion('financial',document.getElementById('snapshotSection'));window.print()});
 document.getElementById('resetBtn').addEventListener('click',()=>{
   if(confirm('Clear this financial snapshot and start over?')){
     document.querySelectorAll('input').forEach(el=>{
@@ -405,7 +422,7 @@ function boostOfferCompletion(moduleId,mount){
  let box=document.getElementById('boostCompletionReturn');
  if(!box){box=document.createElement('div');box.id='boostCompletionReturn';box.style.cssText='margin:20px 0;padding:20px;border:3px solid #16835b;border-radius:16px;background:#effff7;text-align:center';mount.appendChild(box)}
  box.innerHTML='<h3 style="margin:0 0 8px">Activity Complete</h3><p style="margin:0 0 14px">Return to BOOST Pathways to save this completion and unlock your next step.</p><button type="button" id="boostSaveReturn" style="padding:13px 20px;border:0;border-radius:10px;background:#0d6248;color:#fff;font-weight:900;cursor:pointer">Save Completion & Return to BOOST</button>';
- document.getElementById('boostSaveReturn').onclick=function(){target.searchParams.set('boost_complete',moduleId);target.searchParams.set('boost_nonce',nonce);location.assign(target.toString())};
+ document.getElementById('boostSaveReturn').onclick=function(){saveFinancialJourneyEvidence();target.searchParams.set('boost_complete',moduleId);target.searchParams.set('boost_nonce',nonce);location.assign(target.toString())};
 }
 
 </script>
